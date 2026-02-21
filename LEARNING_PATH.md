@@ -46,6 +46,145 @@ python example.py  # Should run successfully
 
 ---
 
+## 1-Week Hands-on Plan (From Scratch Inference Runtime)
+
+This is a practical 7-day sprint focused on building intuition and shipping a working mini-runtime as you study nano-vLLM.
+
+### Day 1 - End-to-End Mental Model + Environment
+
+**Goal**: Understand the runtime lifecycle and verify your setup.
+
+**Read/Trace**:
+- `README.md`
+- `example.py`
+- `nanovllm/llm.py`
+- `nanovllm/engine/llm_engine.py`
+
+**Hands-on**:
+1. Run `python example.py` and confirm generation works.
+2. Draw a one-page flow: `LLM.generate()` -> scheduler -> model runner -> sampler.
+3. Add logging timestamps around prefill/decode loop to see where time goes.
+
+**Deliverable**: One architecture diagram + short timing notes.
+
+---
+
+### Day 2 - Requests, Sequences, and Scheduling
+
+**Goal**: Learn why serving systems separate prefill from decode.
+
+**Read/Trace**:
+- `nanovllm/engine/sequence.py`
+- `nanovllm/engine/scheduler.py`
+
+**Hands-on**:
+1. Trace multiple requests with different prompt lengths.
+2. Log scheduler decisions at each step (which sequence is prefill/decode/running).
+3. Implement a simple policy experiment (e.g., shortest-remaining-first for prefill).
+
+**Deliverable**: Table comparing throughput/latency before vs after your policy.
+
+---
+
+### Day 3 - KV Cache and Block Management
+
+**Goal**: Internalize memory management, the core bottleneck in decode-heavy workloads.
+
+**Read/Trace**:
+- `nanovllm/engine/block_manager.py`
+
+**Hands-on**:
+1. Instrument block allocation/free and reference counts.
+2. Build 3 stress workloads: repeated prefixes, no shared prefixes, mixed-length chat turns.
+3. Measure prefix cache hit ratio and memory pressure behavior.
+
+**Deliverable**: A short memo: "When does prefix caching help most?"
+
+---
+
+### Day 4 - Model Runner and GPU Execution Path
+
+**Goal**: Understand prefill vs decode kernels and data movement.
+
+**Read/Trace**:
+- `nanovllm/engine/model_runner.py`
+- `nanovllm/layers/attention.py`
+
+**Hands-on**:
+1. Profile one run with `torch.profiler` or Nsight Systems.
+2. Compare eager execution against optimized path (where available).
+3. Record kernel-level hotspots and CPU launch overhead.
+
+**Deliverable**: One profile screenshot/report with top 3 bottlenecks.
+
+---
+
+### Day 5 - Core Layers + Sampling Path
+
+**Goal**: See how runtime performance emerges from layer implementations.
+
+**Read/Trace**:
+- `nanovllm/layers/linear.py`
+- `nanovllm/layers/rotary_embedding.py`
+- `nanovllm/layers/layernorm.py`
+- `nanovllm/layers/sampler.py`
+- `nanovllm/sampling_params.py`
+
+**Hands-on**:
+1. Add micro-benchmarks for one layer (e.g., RMSNorm or sampler).
+2. Compare two sampling configs (`temperature/top_p`) and observe decode speed impact.
+3. Verify token quality vs throughput tradeoff.
+
+**Deliverable**: Micro-benchmark notes + quality/speed tradeoff summary.
+
+---
+
+### Day 6 - Rebuild a Minimal Runtime (Your Own)
+
+**Goal**: Build confidence by implementing a tiny inference engine from scratch.
+
+**Hands-on Build (new script)**:
+1. Implement a minimal request queue.
+2. Add prefill+decode loop for a single batch.
+3. Add a toy KV cache allocator.
+4. Add basic top-p sampling.
+5. Run on 2-4 concurrent prompts.
+
+**Stretch**:
+- Add prefix cache reuse.
+- Add a simple scheduler heuristic.
+
+**Deliverable**: `mini_runtime.py` + notes mapping each part to nano-vLLM counterparts.
+
+---
+
+### Day 7 - Benchmark, Analyze, and Present
+
+**Goal**: Turn understanding into engineering judgment.
+
+**Hands-on**:
+1. Run `bench.py` with at least 2 workload mixes (short prompts/high concurrency and long prompts/low concurrency).
+2. Compare your mini runtime vs nano-vLLM baseline.
+3. Summarize bottlenecks and a concrete optimization roadmap.
+
+**Deliverable**: 1-page report with:
+- Throughput + latency table
+- Memory behavior observations
+- Next 3 optimizations to implement (with expected impact)
+
+---
+
+### Weekly Outcomes Checklist
+
+By end of week, you should be able to:
+- Explain prefill/decode scheduling tradeoffs in practical terms.
+- Estimate KV cache memory needs and diagnose memory pressure.
+- Read a profile and identify whether bottlenecks are compute, memory, or CPU-launch overhead.
+- Implement and benchmark a minimal inference runtime with batching and sampling.
+- Propose optimizations with clear hypotheses and measurable success criteria.
+
+---
+
 ## Repository Overview
 
 ### Architecture & Components
